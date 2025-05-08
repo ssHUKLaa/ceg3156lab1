@@ -3,7 +3,6 @@ use ieee.std_logic_1164.all;
 
 entity barrel_shifter_8bit is
    port (
-      GReset, GClock : in  std_logic;
       A  : in  std_logic_vector(7 downto 0);
       S  : in  std_logic_vector(2 downto 0);
       Y  : out std_logic_vector(7 downto 0)
@@ -27,16 +26,6 @@ architecture rtl of barrel_shifter_8bit is
 		);
    end component;
 
-   component enardFF_2 is
-      port (
-         i_resetBar : in  std_logic;
-         i_d        : in  std_logic;
-         i_enable   : in  std_logic;
-         i_clock    : in  std_logic;
-         o_q        : out std_logic;
-         o_qBar     : out std_logic
-      );
-   end component;
 	signal shift0, shift1, shift2, shift3, shift4, shift5, shift6, shift7 : std_logic_vector(7 downto 0);
    signal stage2 : std_logic_vector(7 downto 0);
 
@@ -67,16 +56,6 @@ begin
       );
 	
 
-   -- register the result bits
-   gen_ff: for i in 0 to 7 generate
-      dff: enardFF_2 port map(
-         i_resetBar => GReset,
-         i_d        => stage2(i),
-         i_enable   => '1',
-         i_clock    => GClock,
-         o_q        => Y(i),
-         o_qBar     => open
-      );
-   end generate;
+   Y <= stage2;
 
 end architecture;

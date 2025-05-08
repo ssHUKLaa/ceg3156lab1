@@ -1,23 +1,23 @@
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 
-ENTITY mux_2to1_8bit IS
+ENTITY mux_2to1_9bit IS
     PORT(
         sel     : IN  STD_LOGIC;                             -- Select input
-        d_in1   : IN  STD_LOGIC_VECTOR(7 downto 0);        -- 8-bit Data input 1
-        d_in2   : IN  STD_LOGIC_VECTOR(7 downto 0);        -- 8-bit Data input 2                         -- Reset input
-        d_out   : OUT STD_LOGIC_VECTOR(7 downto 0)          -- 8-bit Data output
+        d_in1   : IN  STD_LOGIC_VECTOR(8 downto 0);        -- 8-bit Data input 1
+        d_in2   : IN  STD_LOGIC_VECTOR(8 downto 0);        -- 8-bit Data input 2                         -- Reset input
+        d_out   : OUT STD_LOGIC_VECTOR(8 downto 0)          -- 8-bit Data output
     );
-END mux_2to1_8bit;
+END mux_2to1_9bit;
 
 
 
-ARCHITECTURE structural OF mux_2to1_8bit IS
+ARCHITECTURE structural OF mux_2to1_9bit IS
 
     SIGNAL not_sel : STD_LOGIC;                           -- Signal for inverted select line
-    SIGNAL and1    : STD_LOGIC_VECTOR(7 downto 0);        -- Intermediate AND output for input 1
-    SIGNAL and2    : STD_LOGIC_VECTOR(7 downto 0);        -- Intermediate AND output for input 2
-    SIGNAL temp_out: STD_LOGIC_VECTOR(7 downto 0);        -- Temporary output
+    SIGNAL and1    : STD_LOGIC_VECTOR(8 downto 0);        -- Intermediate AND output for input 1
+    SIGNAL and2    : STD_LOGIC_VECTOR(8 downto 0);        -- Intermediate AND output for input 2
+    SIGNAL temp_out: STD_LOGIC_VECTOR(8 downto 0);        -- Temporary output
 
 BEGIN
     not_sel <= NOT(sel);                                  -- Invert the select signal
@@ -31,6 +31,7 @@ BEGIN
 	 and1(5) <= d_in1(5) AND not_sel;
 	 and1(6) <= d_in1(6) AND not_sel;
 	 and1(7) <= d_in1(7) AND not_sel;
+	 and1(8) <= d_in1(8) AND not_sel;
 
     -- AND gates for each bit of d_in2
     and2(0) <= d_in2(0) AND sel;
@@ -41,6 +42,7 @@ BEGIN
 	 and2(5) <= d_in2(5) AND sel;
 	 and2(6) <= d_in2(6) AND sel;
 	 and2(7) <= d_in2(7) AND sel;
+	 and2(8) <= d_in2(8) AND sel;
 
     -- Final output OR gates
     temp_out(0) <= and1(0) OR and2(0);
@@ -51,6 +53,7 @@ BEGIN
 	 temp_out(5) <= and1(5) OR and2(5);
 	 temp_out(6) <= and1(6) OR and2(6);
 	 temp_out(7) <= and1(7) OR and2(7);
+	 temp_out(8) <= and1(8) OR and2(8);
 
     d_out <= temp_out;
 

@@ -60,7 +60,7 @@ begin
 	transitoryC(7) <= transitoryG(6) OR (transitoryP(6) AND transitoryC(6));
 	transitorySignal(7) <= (a(7) XOR b(7)) XOR transitoryC(7);
 
-	CarryOut <= transitoryC(7);
+	CarryOut <= transitoryG(7) OR (transitoryP(7) AND transitoryC(7));
 	OverFlowOut <= (a(7) AND b(7)) XOR (transitorySignal(7));
 	
 	check_if_zero <= NOT transitorySignal;

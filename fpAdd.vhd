@@ -14,10 +14,10 @@ ENTITY fpAdd IS
 END fpAdd;
 	
 architecture basic OF fpAdd IS
-	SIGNAL otherBigger, eq, lt, ignoreLesser, signsOpposite, shiftedMantissaSign, otherMantissaSign, tempGetSigned, isMantissaA, coutres, coutres2, coutresfinal : STD_LOGIC;
+	SIGNAL startShifting, dff1_out, dff2_out, shouldStop, temptriggerShift, otherBigger, eq, lt, ignoreLesser, signsOpposite, shiftedMantissaSign, otherMantissaSign, tempGetSigned, isMantissaA, coutres, coutres2, coutresfinal : STD_LOGIC;
 	SIGNAL shiftrightonemaybe : STD_LOGIC_VECTOR(2 downto 0);
 	SIGNAL tempExponentOut : STD_LOGIC_VECTOR(6 downto 0);
-	SIGNAL smallerMan, largerMan, tempincExp, expInc, MantissaToShift, tempExpA,tempExpB, lesserExp,greaterExp, invertedlesserExp, tempdiff, shiftedMantissa, otherMantissa, subMantissaOne, mantissaToInverse, inversedMantissa, addManA, addManB, subManRes, subManRes2, unnormalizedMantissa, rightshiftedMantissa : STD_LOGIC_VECTOR(7 downto 0);
+	SIGNAL intExponentOut, intMantissaOut, smallerMan, largerMan, tempincExp, expInc, MantissaToShift, tempExpA,tempExpB, lesserExp,greaterExp, invertedlesserExp, tempdiff, shiftedMantissa, otherMantissa, subMantissaOne, mantissaToInverse, inversedMantissa, addManA, addManB, subManRes, subManRes2, unnormalizedMantissa, rightshiftedMantissa : STD_LOGIC_VECTOR(7 downto 0);
 	
 	
 	component mux_2to1_8bit IS
@@ -58,11 +58,42 @@ architecture basic OF fpAdd IS
 	
 	component barrel_shifter_8bit IS
 		PORT (
-			GReset : IN STD_LOGIC;
-			GClock : IN STD_LOGIC;
 			A  : in  std_logic_vector(7 downto 0);
 			S  : in  std_logic_vector(2 downto 0);
 			Y  : out std_logic_vector(7 downto 0)
+		);
+	end component;
+	
+	component lshift_8bit IS
+		PORT (
+			data_in  : IN  STD_LOGIC_VECTOR(7 downto 0);  -- 8-bit input data
+			GClock : IN  STD_LOGIC;
+			i_enable : IN  STD_LOGIC; 
+			GReset    : IN  STD_LOGIC; 
+			i_load : IN STD_LOGIC;
+			data_out : OUT STD_LOGIC_VECTOR(7 downto 0) 
+		);
+	end component;
+	
+	component enardFF_2 is
+      port (
+         i_resetBar : in  std_logic;
+         i_d        : in  std_logic;
+         i_enable   : in  std_logic;
+         i_clock    : in  std_logic;
+         o_q        : out std_logic;
+         o_qBar     : out std_logic
+      );
+   end component;
+	
+	component decrementer_8bit IS
+		PORT (
+			data_in  : IN  STD_LOGIC_VECTOR(7 downto 0);  -- 8-bit input data
+			GClock : IN  STD_LOGIC; 
+			i_enable : IN  STD_LOGIC; 
+			GReset : IN  STD_LOGIC; 
+			i_load : IN  STD_LOGIC;  -- load control added
+			data_out : OUT STD_LOGIC_VECTOR(7 downto 0)   -- 8-bit output data
 		);
 	end component;
 
@@ -143,11 +174,10 @@ begin
 			B => "00001000",
 			isEqual => ignoreLesser
 		);
+		
 	
 	barrel_shifter_shift_diff: barrel_shifter_8bit
 		PORT MAP (
-			GReset => GReset,
-			GClock => GClock,
 			A => MantissaToShift,
 			S => tempdiff(2 downto 0),
 			Y => shiftedMantissa
@@ -163,7 +193,7 @@ begin
 			isEqual => otherBigger
 		);	
 		
-	muxordersub : mux_2to1_8bit
+	muxordersublarge : mux_2to1_8bit
 		PORT MAP (
 			sel => otherBigger,
 			d_in1 => shiftedMantissa,
@@ -229,8 +259,6 @@ begin
 	shiftrightonemaybe <= "00" & coutresfinal;
 	barrel_shifter_shift_right_one: barrel_shifter_8bit
 		PORT MAP (
-			GReset => GReset,
-			GClock => GClock,
 			A => unnormalizedMantissa,
 			S => shiftrightonemaybe,
 			Y => rightshiftedMantissa
@@ -248,7 +276,54 @@ begin
 			zeroOut => open,
 			OverFlowOut => open
 		);
+		
 	
+	
+	temptriggerShift <= NOT (rightshiftedMantissa(0) AND '0');
+	shouldStop <= NOT intMantissaOut(7);
+	
+	DFF1 : enardFF_2 
+		port map(
+			i_resetBar => GReset,
+			i_d        => temptriggerShift,
+			i_enable   => '1',
+			i_clock    => GClock,
+			o_q        => dff1_out,
+			o_qBar     => open
+		);
+		
+	DFF2 : enardFF_2 
+		port map(
+			i_resetBar => GReset,
+			i_d        => dff1_out,
+			i_enable   => '1',
+			i_clock    => GClock,
+			o_q        => open,
+			o_qBar     => dff2_out
+		);
+	startShifting <= dff1_out and dff2_out;
+	
+	startshift: lshift_8bit
+		PORT MAP (
+			data_in => rightshiftedMantissa,
+			GClock => GClock,
+			i_enable => shouldStop,
+			GReset => GReset,
+			i_load => startShifting,
+			data_out => intMantissaOut
+		);
+		
+	dec: decrementer_8bit
+		PORT MAP (
+			data_in => expInc,
+			GClock => GClock,
+			i_enable => shouldStop,
+			GReset => GReset,
+			i_load => startShifting,
+			data_out => intExponentOut
+		);
+	ExponentOut <= intExponentOut(6 downto 0);
+	MantissaOut <= intMantissaOut;
 	
 	
 
