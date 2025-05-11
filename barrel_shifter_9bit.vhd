@@ -4,6 +4,7 @@ use ieee.std_logic_1164.all;
 entity barrel_shifter_9bit is
    port (
       A  : in  std_logic_vector(8 downto 0);
+		shiftIn : IN STD_LOGIC;
       S  : in  std_logic_vector(3 downto 0);
       Y  : out std_logic_vector(8 downto 0)
    );
@@ -39,14 +40,14 @@ architecture rtl of barrel_shifter_9bit is
 
 begin
    shift1 <= A;
-   shift2 <= '0' & A(8 downto 1);
-   shift3 <= "00" & A(8 downto 2);
-   shift4 <= "000" & A(8 downto 3);
-   shift5 <= "0000" & A(8 downto 4);
-   shift6 <= "00000" & A(8 downto 5);
-   shift7 <= "000000" & A(8 downto 6);
-   shift8 <= "0000000" & A(8 downto 7);
-   shift9 <= "00000000" & A(8);
+   shift2 <= shiftIn & A(8 downto 1);
+   shift3 <= shiftIn & shiftIn & A(8 downto 2);
+   shift4 <= shiftIn & shiftIn & shiftIn & A(8 downto 3);
+   shift5 <= shiftIn & shiftIn & shiftIn & shiftIn & A(8 downto 4);
+   shift6 <= shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & A(8 downto 5);
+   shift7 <= shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & A(8 downto 6);
+   shift8 <= shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & A(8 downto 7);
+   shift9 <= shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & shiftIn & A(8);
 
    mux: mux_16to1_9bit
       port map (

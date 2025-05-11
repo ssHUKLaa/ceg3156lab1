@@ -37,7 +37,7 @@ BEGIN
 	CarryOut <= transitoryG(8) OR (transitoryP(8) AND transitoryC(8));
 
 	-- Overflow occurs when the carry-in and carry-out of the MSB differ
-	OverFlowOut <= (a(8) AND b(8)) XOR transitorySignal(8);
+	OverFlowOut <= (transitoryG(8) OR (transitoryP(8) AND transitoryC(8))) XOR transitoryC(8);
 
 	-- Zero check: If all sum bits are zero
 	check_if_zero <= NOT transitorySignal;

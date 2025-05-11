@@ -15,10 +15,10 @@ END fpAdd;
 	
 architecture basic OF fpAdd IS
 	SIGNAL startShifting, dff1_out, dff2_out, shouldStop, temptriggerShift, otherBigger, eq, lt, ignoreLesser, signsOpposite, shiftedMantissaSign, otherMantissaSign, tempGetSigned, isMantissaA, coutres, coutres2, coutresfinal : STD_LOGIC;
-	SIGNAL shiftrightonemaybe : STD_LOGIC_VECTOR(2 downto 0);
+	SIGNAL shiftrightonemaybe : STD_LOGIC_VECTOR(3 downto 0);
 	SIGNAL tempExponentOut : STD_LOGIC_VECTOR(6 downto 0);
-	SIGNAL intExponentOut, intMantissaOut, smallerMan, largerMan, tempincExp, expInc, MantissaToShift, tempExpA,tempExpB, lesserExp,greaterExp, invertedlesserExp, tempdiff, shiftedMantissa, otherMantissa, subMantissaOne, mantissaToInverse, inversedMantissa, addManA, addManB, subManRes, subManRes2, unnormalizedMantissa, rightshiftedMantissa : STD_LOGIC_VECTOR(7 downto 0);
-	
+	SIGNAL intExponentOut, tempincExp, expInc, MantissaToShift, tempExpA,tempExpB, lesserExp,greaterExp, invertedlesserExp, tempdiff, otherMantissa, subMantissaOne, mantissaToInverse, addManA, addManB : STD_LOGIC_VECTOR(7 downto 0);
+	SIGNAL LeadingMantissaToShift, shiftedMantissa, LeadingotherMantissa, largerMan, smallerMan, inversedMantissa, subManRes, subManRes2, unnormalizedMantissa, rightshiftedMantissa, intMantissaOut : STD_LOGIC_VECTOR(8 downto 0);
 	
 	component mux_2to1_8bit IS
 		PORT (
@@ -26,6 +26,15 @@ architecture basic OF fpAdd IS
          d_in1   : IN  STD_LOGIC_VECTOR(7 downto 0);        -- 8-bit Data input 1
          d_in2   : IN  STD_LOGIC_VECTOR(7 downto 0);        -- 8-bit Data input 2                         -- Reset input
          d_out   : OUT STD_LOGIC_VECTOR(7 downto 0)          -- 8-bit Data output
+		);
+	end component;
+	
+	component mux_2to1_9bit IS
+		PORT (
+			sel     : IN  STD_LOGIC;                             -- Select input
+         d_in1   : IN  STD_LOGIC_VECTOR(8 downto 0);        -- 8-bit Data input 1
+         d_in2   : IN  STD_LOGIC_VECTOR(8 downto 0);        -- 8-bit Data input 2                         -- Reset input
+         d_out   : OUT STD_LOGIC_VECTOR(8 downto 0)          -- 8-bit Data output
 		);
 	end component;
 	
@@ -46,12 +55,30 @@ architecture basic OF fpAdd IS
 		);
 	end component;
 	
+	component equality_comparator_9bit IS
+		PORT (
+			A       : IN STD_LOGIC_VECTOR(8 downto 0);
+			B       : IN STD_LOGIC_VECTOR(8 downto 0);
+			isEqual : OUT STD_LOGIC
+		);
+	end component;
+	
 	component CLA_8bit IS 
 		PORT (
 			a : IN STD_LOGIC_VECTOR(7 downto 0);
 			b : IN STD_LOGIC_VECTOR(7 downto 0);
 			cin : IN STD_LOGIC;
 			Sum : OUT STD_LOGIC_VECTOR(7 downto 0);
+			CarryOut, zeroOut, OverFlowOut : OUT STD_LOGIC
+		);
+	end component;
+	
+	component CLA_9bit IS 
+		PORT (
+			a : IN STD_LOGIC_VECTOR(8 downto 0);
+			b : IN STD_LOGIC_VECTOR(8 downto 0);
+			cin : IN STD_LOGIC;
+			Sum : OUT STD_LOGIC_VECTOR(8 downto 0);
 			CarryOut, zeroOut, OverFlowOut : OUT STD_LOGIC
 		);
 	end component;
@@ -64,6 +91,15 @@ architecture basic OF fpAdd IS
 		);
 	end component;
 	
+	component barrel_shifter_9bit IS
+		PORT (
+			A  : in  std_logic_vector(8 downto 0);
+			shiftIn : IN STD_LOGIC;
+			S  : in  std_logic_vector(3 downto 0);
+			Y  : out std_logic_vector(8 downto 0)
+		);
+	end component;
+	
 	component lshift_8bit IS
 		PORT (
 			data_in  : IN  STD_LOGIC_VECTOR(7 downto 0);  -- 8-bit input data
@@ -72,6 +108,17 @@ architecture basic OF fpAdd IS
 			GReset    : IN  STD_LOGIC; 
 			i_load : IN STD_LOGIC;
 			data_out : OUT STD_LOGIC_VECTOR(7 downto 0) 
+		);
+	end component;
+	
+	component lshift_9bit IS
+		PORT (
+			data_in  : IN  STD_LOGIC_VECTOR(8 downto 0);  -- 8-bit input data
+			GClock : IN  STD_LOGIC;
+			i_enable : IN  STD_LOGIC; 
+			GReset    : IN  STD_LOGIC; 
+			i_load : IN STD_LOGIC;
+			data_out : OUT STD_LOGIC_VECTOR(8 downto 0) 
 		);
 	end component;
 	
@@ -174,30 +221,31 @@ begin
 			B => "00001000",
 			isEqual => ignoreLesser
 		);
-		
 	
-	barrel_shifter_shift_diff: barrel_shifter_8bit
+	LeadingMantissaToShift <= '1' & MantissaToShift;
+	barrel_shifter_shift_diff: barrel_shifter_9bit
 		PORT MAP (
-			A => MantissaToShift,
-			S => tempdiff(2 downto 0),
+			A => LeadingMantissaToShift,
+			ShiftIn => '0',
+			S => tempdiff(3 downto 0),
 			Y => shiftedMantissa
 		);
 	tempExponentOut <= greaterExp(6 downto 0);
 	
 	signsOpposite <= shiftedMantissaSign XOR otherMantissaSign;
-	
-	comp_shifted_other: equality_comparator_8bit
+	LeadingotherMantissa <= '1' & otherMantissa;
+	comp_shifted_other: equality_comparator_9bit
 		PORT MAP (
-			A => otherMantissa,
+			A => LeadingotherMantissa,
 			B => shiftedMantissa,
 			isEqual => otherBigger
 		);	
 		
-	muxordersublarge : mux_2to1_8bit
+	muxordersublarge : mux_2to1_9bit
 		PORT MAP (
 			sel => otherBigger,
 			d_in1 => shiftedMantissa,
-			d_in2 => otherMantissa,
+			d_in2 => LeadingotherMantissa,
 			d_out => largerMan
 		);
 	muxordersubsign: mux_2to1_1bit
@@ -208,16 +256,16 @@ begin
 			d_out => SignOut
 		);
 		
-	muxordersub : mux_2to1_8bit
+	muxordersub : mux_2to1_9bit
 		PORT MAP (
 			sel => otherBigger,
-			d_in1 => otherMantissa,
+			d_in1 => LeadingotherMantissa,
 			d_in2 => shiftedMantissa,
 			d_out => smallerMan
 		);
 	
-	inversedMantissa <= smallerMan XOR "11111111";
-	sub_mantissa: CLA_8bit
+	inversedMantissa <= smallerMan XOR "111111111";
+	sub_mantissa: CLA_9bit
 		PORT MAP (
 			a => largerMan,
 			b => inversedMantissa,
@@ -228,10 +276,10 @@ begin
 			OverFlowOut => open
 		);
 	
-	add_man: CLA_8bit
+	add_man: CLA_9bit
 		PORT MAP (
 			a => shiftedMantissa,
-			b => otherMantissa,
+			b => LeadingotherMantissa,
 			cin => '0',
 			Sum => subManRes2,
 			CarryOut => coutres2,
@@ -240,7 +288,7 @@ begin
 		);
 	
 	
-	finalman : mux_2to1_8bit
+	finalman : mux_2to1_9bit
 		PORT MAP (
 			sel => signsOpposite,
 			d_in1 => subManRes2,
@@ -256,10 +304,11 @@ begin
 		);
 	
 	
-	shiftrightonemaybe <= "00" & coutresfinal;
-	barrel_shifter_shift_right_one: barrel_shifter_8bit
+	shiftrightonemaybe <= "000" & coutresfinal;
+	barrel_shifter_shift_right_one: barrel_shifter_9bit
 		PORT MAP (
 			A => unnormalizedMantissa,
+			ShiftIn => '1',
 			S => shiftrightonemaybe,
 			Y => rightshiftedMantissa
 		);
@@ -280,7 +329,7 @@ begin
 	
 	
 	temptriggerShift <= NOT (rightshiftedMantissa(0) AND '0');
-	shouldStop <= NOT intMantissaOut(7);
+	shouldStop <= NOT intMantissaOut(8);
 	
 	DFF1 : enardFF_2 
 		port map(
@@ -303,7 +352,7 @@ begin
 		);
 	startShifting <= dff1_out and dff2_out;
 	
-	startshift: lshift_8bit
+	startshift: lshift_9bit
 		PORT MAP (
 			data_in => rightshiftedMantissa,
 			GClock => GClock,
@@ -323,7 +372,7 @@ begin
 			data_out => intExponentOut
 		);
 	ExponentOut <= intExponentOut(6 downto 0);
-	MantissaOut <= intMantissaOut;
+	MantissaOut <= intMantissaOut(7 downto 0);
 	
 	
 
