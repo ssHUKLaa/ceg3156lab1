@@ -14,9 +14,9 @@ ENTITY fpMult IS
 END fpMult;
 
 architecture basic OF fpMult IS
-	SIGNAL tempExpA, tempExpB, expSum, unbiasedexp : STD_LOGIC_VECTOR(7 downto 0);
+	SIGNAL tempExpA, tempExpB, expSum, unbiasedexp, incedexp, intExponentOut : STD_LOGIC_VECTOR(7 downto 0);
 	SIGNAL leadingManA, leadingManB : STD_LOGIC_VECTOR(8 downto 0);
-	SIGNAL multedMan, normalizedMantissa, lshiftinput : STD_LOGIC_VECTOR(17 downto 0);
+	SIGNAL multedMan, normalizedMantissa, lshiftinput, rshiftmantissa, msbmask : STD_LOGIC_VECTOR(17 downto 0);
 	SIGNAL stopnorm, dff1_out, dff2_out, oneclkpulse : STD_LOGIC;
 	
 	component CLA_8bit IS 
@@ -64,6 +64,17 @@ architecture basic OF fpMult IS
          o_qBar     : out std_logic
       );
    end component;
+	
+	component decrementer_8bit IS
+		PORT (
+			data_in  : IN  STD_LOGIC_VECTOR(7 downto 0);  -- 8-bit input data
+			GClock : IN  STD_LOGIC; 
+			i_enable : IN  STD_LOGIC; 
+			GReset : IN  STD_LOGIC; 
+			i_load : IN  STD_LOGIC;  -- load control added
+			data_out : OUT STD_LOGIC_VECTOR(7 downto 0)   -- 8-bit output data
+		);
+	end component;
 
 begin 
 
@@ -104,6 +115,19 @@ begin
 			ZeroOut => open,
 			OverFlowOut => open
 		);
+	msbmask <= multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17);
+	rshiftmantissa <= (multedMan and NOT msbmask) OR (('0' & MultedMan(17 downto 1)) and msbmask);
+	
+	incexp: CLA_8bit
+		PORT MAP (
+			a => unbiasedexp,
+			b => "00000001",
+			cin => '0',
+			Sum => incedexp,
+			CarryOut => open,
+			zeroOut => open,
+			OverFlowOut => open
+		);
 		
 	DFF1 : enardFF_2 
 		port map(
@@ -128,20 +152,31 @@ begin
 	oneclkpulse <= dff1_out and dff2_out;
 		
 		
-	stopnorm <= NOT normalizedMantissa(17);
+	stopnorm <= NOT normalizedMantissa(16);
 	
 	normman: lshift_18bit_gated
 		PORT MAP (
-			data_in => multedMan,
+			data_in => rshiftmantissa,
 			GClock =>  GClock,
 			i_load => oneclkpulse,
 			i_enable => stopnorm,
 			GReset => GReset,
 			data_out => normalizedMantissa
 		);
-	ExponentOut <= unbiasedexp(6 downto 0);
 	
-	MantissaOut <= normalizedMantissa(16 downto 9);
+	decexp: decrementer_8bit
+		PORT MAP (
+			data_in => incedexp,
+			GClock => GClock,
+			i_enable => stopnorm,
+			GReset => GReset,
+			i_load => oneclkpulse,
+			data_out => intExponentOut
+		);
+	
+	ExponentOut <= intExponentOut(6 downto 0);
+	
+	MantissaOut <= normalizedMantissa(15 downto 8);
 	SignOut <= SignA XOR SignB;
 	
 	

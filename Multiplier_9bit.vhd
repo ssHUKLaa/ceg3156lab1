@@ -30,16 +30,13 @@ ARCHITECTURE basic OF Multiplier_9bit IS
 
     SIGNAL transitoryMultiplicand, transitoryMultiplier : STD_LOGIC_VECTOR(17 downto 0);
 	 type PartialProductArray is array(0 to 8) of STD_LOGIC_VECTOR(17 downto 0);
-
+	
 	 signal partialProducts, shiftedProducts, sums : PartialProductArray;
     SIGNAL check_if_zero : STD_LOGIC_VECTOR(17 downto 0);
 BEGIN
-    -- Sign extend to 18 bits
-    transitoryMultiplicand(17 DOWNTO 9) <= (OTHERS => a(8));
-    transitoryMultiplicand(8 DOWNTO 0) <= a;
-
-    transitoryMultiplier(17 DOWNTO 9) <= (OTHERS => b(8));
-    transitoryMultiplier(8 DOWNTO 0) <= b;
+    transitoryMultiplicand <= "000000000" & a;  
+    transitoryMultiplier <= "000000000" & b; 
+	 
 
 	 GEN_PARTIAL_PRODUCTS: FOR i IN 0 TO 8 GENERATE
 		  partialProducts(i) <= transitoryMultiplicand AND (transitoryMultiplier(i) & transitoryMultiplier(i) & transitoryMultiplier(i) & transitoryMultiplier(i) & 
