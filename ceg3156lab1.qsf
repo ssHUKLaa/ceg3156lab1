@@ -81,3 +81,8 @@ set_global_assignment -name VHDL_FILE fpMult.vhd
 set_global_assignment -name VHDL_FILE lshift_18bit.vhd
 set_global_assignment -name VHDL_FILE CLA_18bit.vhd
 set_global_assignment -name VHDL_FILE lshift_18bit_gated.vhd
+set_global_assignment -name VHDL_FILE tb_decrementer_8bit.vhd
+set_global_assignment -name VHDL_FILE tb_lshift_8bit.vhd
+set_global_assignment -name VHDL_FILE tb_CLA_8bit.vhd
+set_global_assignment -name VHDL_FILE tb_Multiplier_9bit.vhd
+set_global_assignment -name VHDL_FILE tb_lshift_18bit_gated.vhd

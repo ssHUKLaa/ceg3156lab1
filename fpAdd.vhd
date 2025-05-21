@@ -371,6 +371,7 @@ begin
 			i_load => startShifting,
 			data_out => intExponentOut
 		);
+	OverFlowOut <= intExponentOut(7);
 	ExponentOut <= intExponentOut(6 downto 0);
 	MantissaOut <= intMantissaOut(7 downto 0);
 	

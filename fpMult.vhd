@@ -14,10 +14,10 @@ ENTITY fpMult IS
 END fpMult;
 
 architecture basic OF fpMult IS
-	SIGNAL tempExpA, tempExpB, expSum, unbiasedexp, incedexp, intExponentOut : STD_LOGIC_VECTOR(7 downto 0);
+	SIGNAL tempExpA, tempExpB, expSum, unbiasedexp, incedexp, intExponentOut, incExpCond, incExpCond2, intExponentOutReNorm : STD_LOGIC_VECTOR(7 downto 0);
 	SIGNAL leadingManA, leadingManB : STD_LOGIC_VECTOR(8 downto 0);
-	SIGNAL multedMan, normalizedMantissa, lshiftinput, rshiftmantissa, msbmask : STD_LOGIC_VECTOR(17 downto 0);
-	SIGNAL stopnorm, dff1_out, dff2_out, oneclkpulse : STD_LOGIC;
+	SIGNAL multedMan, normalizedMantissa, lshiftinput, rshiftmantissa, msbmask, roundedMantissa, msbmask2, rshiftmantissa2 : STD_LOGIC_VECTOR(17 downto 0);
+	SIGNAL stopnorm, dff1_out, dff2_out, oneclkpulse, Guard, Round, Sticky, roundCond : STD_LOGIC;
 	
 	component CLA_8bit IS 
 		PORT (
@@ -25,6 +25,16 @@ architecture basic OF fpMult IS
 			b : IN STD_LOGIC_VECTOR(7 downto 0);
 			cin : IN STD_LOGIC;
 			Sum : OUT STD_LOGIC_VECTOR(7 downto 0);
+			CarryOut, zeroOut, OverFlowOut : OUT STD_LOGIC
+		);
+	end component;
+	
+	component CLA_18bit IS 
+		PORT (
+			a : IN STD_LOGIC_VECTOR(17 downto 0);
+			b : IN STD_LOGIC_VECTOR(17 downto 0);
+			cin : IN STD_LOGIC;
+			Sum : OUT STD_LOGIC_VECTOR(17 downto 0);
 			CarryOut, zeroOut, OverFlowOut : OUT STD_LOGIC
 		);
 	end component;
@@ -75,6 +85,8 @@ architecture basic OF fpMult IS
 			data_out : OUT STD_LOGIC_VECTOR(7 downto 0)   -- 8-bit output data
 		);
 	end component;
+	
+	
 
 begin 
 
@@ -116,12 +128,13 @@ begin
 			OverFlowOut => open
 		);
 	msbmask <= multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17) & multedMan(17);
+	incExpCond <= "0000000" & multedMan(17);
 	rshiftmantissa <= (multedMan and NOT msbmask) OR (('0' & MultedMan(17 downto 1)) and msbmask);
 	
 	incexp: CLA_8bit
 		PORT MAP (
 			a => unbiasedexp,
-			b => "00000001",
+			b => incExpCond,
 			cin => '0',
 			Sum => incedexp,
 			CarryOut => open,
@@ -173,9 +186,41 @@ begin
 			i_load => oneclkpulse,
 			data_out => intExponentOut
 		);
+		
+	Guard <= normalizedMantissa(7);
+	Round <= normalizedMantissa(6);
+	Sticky <= normalizedMantissa(5) OR normalizedMantissa(4) OR normalizedMantissa(3) OR normalizedMantissa(2) OR normalizedMantissa(1) OR normalizedMantissa(0);
 	
-	ExponentOut <= intExponentOut(6 downto 0);
+	roundCond <= Guard AND (Round OR Sticky OR normalizedMantissa(8));
 	
+	addCond: CLA_18bit
+		PORT MAP (
+			a => normalizedMantissa,
+			b => roundCond,
+			cin => '0',
+			Sum => roundedMantissa,
+			CarryOut => rmanCarry,
+			zeroOut => open,
+			OverFlowOut => open
+		);
+	
+	
+	msbmask2 <= roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17) & roundedMantissa(17);
+	rshiftmantissa2 <= (roundedMantissa and NOT msbmask2) OR (('0' & roundedMantissa(17 downto 1)) and msbmask2);
+	incExpCond2 <= "0000000" & roundedMantissa(17);
+	incexp2: CLA_8bit
+		PORT MAP (
+			a => intExponentOut,
+			b => incExpCond2,
+			cin => '0',
+			Sum => intExponentOutReNorm,
+			CarryOut => open,
+			zeroOut => open,
+			OverFlowOut => open
+		);
+	
+	ExponentOut <= intExponentOutReNorm(6 downto 0);
+	Overflow <= intExponentOutReNorm(7);
 	MantissaOut <= normalizedMantissa(15 downto 8);
 	SignOut <= SignA XOR SignB;
 	
