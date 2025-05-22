@@ -16,8 +16,8 @@ END fpMult;
 architecture basic OF fpMult IS
 	SIGNAL tempExpA, tempExpB, expSum, unbiasedexp, incedexp, intExponentOut, incExpCond, incExpCond2, intExponentOutReNorm : STD_LOGIC_VECTOR(7 downto 0);
 	SIGNAL leadingManA, leadingManB : STD_LOGIC_VECTOR(8 downto 0);
-	SIGNAL multedMan, normalizedMantissa, lshiftinput, rshiftmantissa, msbmask, roundedMantissa, msbmask2, rshiftmantissa2 : STD_LOGIC_VECTOR(17 downto 0);
-	SIGNAL stopnorm, dff1_out, dff2_out, oneclkpulse, Guard, Round, Sticky, roundCond : STD_LOGIC;
+	SIGNAL multedMan, normalizedMantissa, lshiftinput, rshiftmantissa, msbmask, roundedMantissa, msbmask2, rshiftmantissa2, roundCond : STD_LOGIC_VECTOR(17 downto 0);
+	SIGNAL stopnorm, dff1_out, dff2_out, oneclkpulse, Guard, Round, Sticky, rManCarry : STD_LOGIC;
 	
 	component CLA_8bit IS 
 		PORT (
@@ -191,8 +191,7 @@ begin
 	Round <= normalizedMantissa(6);
 	Sticky <= normalizedMantissa(5) OR normalizedMantissa(4) OR normalizedMantissa(3) OR normalizedMantissa(2) OR normalizedMantissa(1) OR normalizedMantissa(0);
 	
-	roundCond <= Guard AND (Round OR Sticky OR normalizedMantissa(8));
-	
+	roundCond <= "00000000000000000" & (Guard AND (Round OR Sticky OR normalizedMantissa(8)));
 	addCond: CLA_18bit
 		PORT MAP (
 			a => normalizedMantissa,
