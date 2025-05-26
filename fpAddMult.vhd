@@ -7,7 +7,7 @@ ENTITY fpAddMult IS
 		GClock, GReset, SignIn, selAB, startOpr : IN STD_LOGIC;
 		MantissaIn : IN STD_LOGIC_VECTOR(7 downto 0);
 		ExponentIn : IN STD_LOGIC_VECTOR(6 downto 0);   
-		SignOut, Overflow, SignsOpposite : OUT STD_LOGIC;
+		SignOut, Overflow : OUT STD_LOGIC;
 		MantissaOut : OUT STD_LOGIC_VECTOR(7 downto 0);
 		ExponentOut : OUT STD_LOGIC_VECTOR(6 downto 0)
 	);

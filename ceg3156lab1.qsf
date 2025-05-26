@@ -38,7 +38,7 @@
 
 set_global_assignment -name FAMILY "Cyclone IV E"
 set_global_assignment -name DEVICE EP4CE115F29C7
-set_global_assignment -name TOP_LEVEL_ENTITY fpAdd
+set_global_assignment -name TOP_LEVEL_ENTITY fpAddMult
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 13.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "17:39:54  MAY 06, 2025"
 set_global_assignment -name LAST_QUARTUS_VERSION 13.1
@@ -51,10 +51,6 @@ set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
-set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
-set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
-set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name VHDL_FILE Multiplier_4bit.vhd
 set_global_assignment -name VHDL_FILE Multiplier_9bit.vhd
 set_global_assignment -name VHDL_FILE lshift_8bit.vhd
@@ -86,3 +82,45 @@ set_global_assignment -name VHDL_FILE tb_lshift_8bit.vhd
 set_global_assignment -name VHDL_FILE tb_CLA_8bit.vhd
 set_global_assignment -name VHDL_FILE tb_Multiplier_9bit.vhd
 set_global_assignment -name VHDL_FILE tb_lshift_18bit_gated.vhd
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_location_assignment PIN_Y23 -to GReset
+set_location_assignment PIN_Y24 -to selAB
+set_location_assignment PIN_AA22 -to SignIn
+set_location_assignment PIN_H19 -to MantissaOut[7]
+set_location_assignment PIN_J19 -to MantissaOut[6]
+set_location_assignment PIN_E18 -to MantissaOut[5]
+set_location_assignment PIN_F18 -to MantissaOut[4]
+set_location_assignment PIN_F21 -to MantissaOut[3]
+set_location_assignment PIN_F19 -to MantissaOut[2]
+set_location_assignment PIN_E19 -to MantissaOut[1]
+set_location_assignment PIN_G19 -to MantissaOut[0]
+set_location_assignment PIN_AA23 -to ExponentIn[6]
+set_location_assignment PIN_AA24 -to ExponentIn[5]
+set_location_assignment PIN_AB23 -to ExponentIn[4]
+set_location_assignment PIN_AB24 -to ExponentIn[3]
+set_location_assignment PIN_AC24 -to ExponentIn[2]
+set_location_assignment PIN_AB25 -to ExponentIn[1]
+set_location_assignment PIN_AC25 -to ExponentIn[0]
+set_location_assignment PIN_AB26 -to MantissaIn[7]
+set_location_assignment PIN_AD26 -to MantissaIn[6]
+set_location_assignment PIN_AC26 -to MantissaIn[5]
+set_location_assignment PIN_AB27 -to MantissaIn[4]
+set_location_assignment PIN_AD27 -to MantissaIn[3]
+set_location_assignment PIN_AC27 -to MantissaIn[2]
+set_location_assignment PIN_AC28 -to MantissaIn[1]
+set_location_assignment PIN_AB28 -to MantissaIn[0]
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_location_assignment PIN_M23 -to startOpr
+set_location_assignment PIN_Y2 -to GClock
+set_location_assignment PIN_G15 -to SignOut
+set_location_assignment PIN_E21 -to Overflow
+set_location_assignment PIN_F15 -to ExponentOut[6]
+set_location_assignment PIN_H17 -to ExponentOut[5]
+set_location_assignment PIN_J16 -to ExponentOut[4]
+set_location_assignment PIN_H16 -to ExponentOut[3]
+set_location_assignment PIN_J15 -to ExponentOut[2]
+set_location_assignment PIN_G17 -to ExponentOut[1]
+set_location_assignment PIN_J17 -to ExponentOut[0]
